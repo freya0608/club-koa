@@ -6,4 +6,4 @@ module.exports = {
     get $app(){
         return app;
     }
-}
+};

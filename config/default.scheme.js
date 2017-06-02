@@ -14,8 +14,37 @@ module.exports = {
         "request": {
             "body": checkSignupBody
         }
+    },
+    "(GET|POST) /signin": {
+        "request": {
+            "session": checkNotLogin
+        }
+    },
+    "POST /signin": {
+        "request": {
+            "body": checkSigninBody
+        }
+    },
+    "(GET|POST) /create": {
+        "request": {
+            "session": checkLogin
+        }
+    },
+    "POST /create": {
+        "request": {
+            "body": checkCreateBody
+        }
+    },
+    "POST /topic/:id": {
+        "request": {
+            "session": checkLogin,
+            "body": checkReplyTopic
+        }
     }
+
+
 };
+
 
 function md5 (str) {
     return crypto.createHash('md5').update(str).digest('hex');
@@ -70,7 +99,63 @@ function checkSignupBody() {
     body.password = md5(validator.trim(body.password));
     return true;
 }
-
+function checkSigninBody() {
+    var body = this.request.body;
+    var flash;
+    if (!body || !body.name) {
+        flash = {error: '请填写用户名!'};
+    }
+    else if (!body.password) {
+        flash = {error: '请填写密码!'};
+    }
+    if (flash) {
+        this.flash = flash;
+        this.redirect('back');
+        return false;
+    }
+    body.name = validator.trim(body.name);
+    body.password = md5(validator.trim(body.password));
+    return true;
+}
+function checkCreateBody() {
+    var body = this.request.body;
+    var flash;
+    if (!body || !body.title || body.title.length < 10) {
+        flash = {error: '请填写合法标题!'};
+    }
+    else if (!body.tab) {
+        flash = {error: '请选择版块!'};
+    }
+    else if (!body.content) {
+        flash = {error: '请填写内容!'};
+    }
+    if (flash) {
+        this.flash = flash;
+        this.redirect('back');
+        return false;
+    }
+    body.title = validator.trim(body.title);
+    body.tab = validator.trim(body.tab);
+    body.content = validator.trim(body.content);
+    return true;
+}
+function checkReplyTopic() {
+    var body = this.request.body;
+    var flash;
+    if (!body || !body.topic_id || !validator.isMongoId(body.topic_id)) {
+        flash = {error: '回复的帖子不存在!'};
+    }
+    else if (!body.content) {
+        flash = {error: '回复的内容为空!'};
+    }
+    if (flash) {
+        this.flash = flash;
+        this.redirect('back');
+        return false;
+    }
+    body.content = validator.trim(body.content);
+    return true;
+}
 
 
 
